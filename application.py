@@ -9,69 +9,81 @@ import wave
 import struct
 import matplotlib.pyplot as plt
 
+# Control Variables
+writetofile = False
+ourSampleRate = 100
+
 # Video Clip Extraction
+# Reads in Video
+# Writes out Videos sounds into a .wav
 
-chosenVideo = VideoFileClip("clips/GBale.mp4")
-
+chosenVideo = VideoFileClip("clips/Gbale.mp4")
 temp_folder="clips/"
-
 chosenVideo.audio.write_audiofile(temp_folder+"Sounds.wav")
-
 waveFile = wave.open(temp_folder+"Sounds.wav")
 
-#Getting details about the .wav file and prininting them out
-no_of_channels = waveFile.getnchannels()
-sample_width = waveFile.getsampwidth()
-sample_freq = waveFile.getframerate()
-number_frames = waveFile.getnframes()
+# Getting details about the .wav file and prininting them out
+no_channels = waveFile.getnchannels()
+samp_width = waveFile.getsampwidth()
+samp_freq = waveFile.getframerate()
+length = waveFile.getnframes()
 
-print "Number of Channels:", no_of_channels
-print "Sample Width in Bytes;", sample_width
-print "Sampling Frequency:", sample_freq
-print "Number of Audio Frames:", number_frames
-
-f = open('workfile.txt', 'w')	
+# Opening a text file to write out amplitudes
+if writetofile == True:
+	f = open('Amplitudes.txt', 'w')	
 
 i = 0
 highAmp = 0
 highLight = 0
 
-length = waveFile.getnframes()
-
+# While there are frames left to read 
 while i < length:
     try:
-        time = i/sample_freq
+		# Time can be figured out by dividing the frame number by the sampling rate
+        time = i/samp_freq
+		#reading in our data
         waveData = waveFile.readframes(1)
         data = struct.unpack("<i", waveData)
         s = str(int(data[0]))
+		# Finding the highest value
         if data > highAmp:
             highAmp = data
             highlight = time
+		# Printing progress
         frame = str(i)
         lengthTxt = str(length)
         print(frame + '/' + lengthTxt)
-        # f.write('\nValue at Frame:')
-        # q = str(i)
-        # t = str(time)
-        # f.write('Time :')
-        # f.write(t)
-        # f.write(q)
-        # f.write(' = ')
-        # f.write(s)
-        i = i + 100
+		# Writing Amplitudes to a file, This was to help understand the data
+        if writetofile == True:
+            s = str(int(data[0]))
+            f.write('\nValue at Frame:')
+            t = str(time)
+            f.write('Time :')
+            f.write(t)
+            f.write(frame)
+            f.write(' = ')
+            f.write(s)
+        i = i + ourSampleRate
     except ValueError:
         print('Value Error at line 125')
         break		
+
+if writetofile == True:
+	f.close()
+
 	
-f.close()
+# Printing Useful information
+print "Number of Channels:", no_channels
+print "Sample Width in Bytes;", samp_width
+print "Sampling Frequency:", samp_freq
+print "Number of Audio Frames:", length
 
 print('Highest Amplitude Was')
 print(highAmp)
 print('Highest Amplitude Was At')
 print(highlight)
 
-chosenVideo = VideoFileClip("clips/GBale.mp4")
-
-result = VideoFileClip("clips/GBale.mp4").subclip(highlight-5,highlight+5)
+# Writing out the highlight as a MP4
+result = VideoFileClip(chosenVideo.filename).subclip(highlight-5,highlight+5)
 
 result.write_videofile("Highlight.mp4",fps=25)
